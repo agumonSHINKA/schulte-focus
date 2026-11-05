@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="zh-Hant-TW" data-app-version="schulte-v2">
+<html lang="zh-Hant-TW" data-app-version="schulte-v3">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
@@ -72,6 +72,10 @@
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", sans-serif;
       overscroll-behavior: none;
       touch-action: manipulation;
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-touch-callout: none;
+      -webkit-tap-highlight-color: transparent;
     }
     body {
       margin: 0 auto;
@@ -83,6 +87,11 @@
       overflow-x: hidden;
       background: var(--bg);
       color: var(--text);
+      touch-action: manipulation;
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-touch-callout: none;
+      -webkit-tap-highlight-color: transparent;
     }
     h1 {
       font-size: 1.15rem; font-weight: 700; margin: 0 0 4px;
@@ -166,10 +175,13 @@
       height: auto;
       display: grid;
       gap: 8px;
-      touch-action: manipulation;
+      touch-action: none;
       position: relative;
       margin: 0 auto;
       padding-bottom: 2px;
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-touch-callout: none;
     }
     #board.size-3 { gap: 10px; }
     #board.size-6, #board.size-7 { gap: 5px; }
@@ -183,13 +195,18 @@
         0 var(--key-depth) 0 var(--cell-edge),
         0 12px 18px rgba(0,0,0,.42),
         inset 0 1px 0 rgba(255,255,255,.22);
-      cursor: pointer; user-select: none;
+      cursor: pointer;
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-touch-callout: none;
+      -webkit-tap-highlight-color: transparent;
+      touch-action: none;
       transition: transform var(--key-ms) ease, box-shadow var(--key-ms) ease, background var(--key-ms) ease, color .2s;
       min-height: 40px;
-      -webkit-user-select: none;
       opacity: 1;
       margin: 0;
       position: relative;
+      pointer-events: auto;
     }
     .cell:active:not(.done):not(.disabled),
     .cell.pressed:not(.done):not(.disabled) {
@@ -218,6 +235,7 @@
       animation: shake .35s ease, flash .35s ease;
       background: linear-gradient(180deg, #fb7185 0%, var(--danger) 100%) !important;
       color: #fff !important;
+      pointer-events: auto !important;
       box-shadow:
         0 var(--key-depth) 0 #9f1239,
         0 10px 16px rgba(244,63,94,.35) !important;
@@ -518,8 +536,6 @@
         btn.setAttribute('role', 'gridcell');
         if (doneSet.has(n)) btn.classList.add('done');
         if (!started || finished) btn.classList.add('disabled');
-        btn.addEventListener('click', onCellTap);
-        bindPress(btn);
         boardEl.appendChild(btn);
       });
     }
@@ -561,17 +577,30 @@
       renderBoard();
     }
 
-    function onCellTap(e) {
+    let hardRenderRaf = 0;
+    function queueHardRender() {
+      if (hardRenderRaf) return;
+      hardRenderRaf = requestAnimationFrame(function () {
+        hardRenderRaf = 0;
+        if (started && !finished && hardMode) renderBoard();
+      });
+    }
+
+    function handleCellInput(btn) {
       if (!started || finished) return;
-      const btn = e.currentTarget;
+      if (!btn || !boardEl.contains(btn)) return;
+      if (btn.classList.contains('done') || btn.classList.contains('disabled')) return;
       const n = Number(btn.dataset.num);
+      if (!Number.isFinite(n)) return;
       if (n !== nextTarget) {
         errors += 1;
         errorsEl.textContent = String(errors);
         btn.classList.remove('wrong');
         void btn.offsetWidth;
         btn.classList.add('wrong');
-        setTimeout(function () { btn.classList.remove('wrong'); }, 350);
+        setTimeout(function () {
+          if (btn.isConnected) btn.classList.remove('wrong');
+        }, 350);
         if (typeof navigator.vibrate === 'function') navigator.vibrate([40, 40, 60]);
         return;
       }
@@ -601,19 +630,48 @@
           }
           return x;
         });
-        renderBoard();
+        // Defer re-render so other simultaneous pointerdowns on this board still hit.
+        queueHardRender();
       }
     }
 
+    function setPressed(btn) {
+      if (!btn || btn.classList.contains('done') || btn.classList.contains('disabled')) return;
+      btn.classList.add('pressed');
+      var cleared = false;
+      function clear() {
+        if (cleared) return;
+        cleared = true;
+        if (btn.isConnected) btn.classList.remove('pressed');
+      }
+      btn.addEventListener('pointerup', clear, { once: true });
+      btn.addEventListener('pointercancel', clear, { once: true });
+      btn.addEventListener('lostpointercapture', clear, { once: true });
+      setTimeout(clear, 120);
+    }
+
+    boardEl.addEventListener('pointerdown', function (ev) {
+      if (ev.pointerType === 'mouse' && ev.button !== 0) return;
+      var btn = ev.target && ev.target.closest ? ev.target.closest('.cell') : null;
+      if (!btn || !boardEl.contains(btn)) return;
+      ev.preventDefault();
+      setPressed(btn);
+      handleCellInput(btn);
+    }, { passive: false });
+
+    let uiLockUntil = 0;
     function finishGame() {
       finished = true;
       started = false;
       cancelAnimationFrame(rafId);
+      if (hardRenderRaf) { cancelAnimationFrame(hardRenderRaf); hardRenderRaf = 0; }
       elapsed = performance.now() - startTs;
       timerEl.textContent = formatTime(elapsed);
       nextNumEl.textContent = '✓';
       btnStart.textContent = '開始';
       btnStart.disabled = false;
+      // Avoid the still-held finger releasing onto 再來一局 / 關閉.
+      uiLockUntil = performance.now() + 320;
 
       const record = {
         t: Date.now(),
@@ -654,7 +712,9 @@
         (hardMode ? ' · 困難' : '') + (reverse ? ' · 倒序' : '');
       if (isNewBest) newBest.classList.remove('hidden');
       else newBest.classList.add('hidden');
-      endOverlay.classList.add('show');
+      setTimeout(function () {
+        if (finished) endOverlay.classList.add('show');
+      }, 160);
     }
 
     function renderProgress(progress) {
@@ -822,21 +882,23 @@
       renderProgress();
     });
 
-    btnStart.addEventListener('click', function () { startGame(false); });
-    btnRestart.addEventListener('click', function () { startGame(true); });
-    btnAgain.addEventListener('click', function () { startGame(true); });
+    btnStart.addEventListener('click', function () {
+      if (performance.now() < uiLockUntil) return;
+      startGame(false);
+    });
+    btnRestart.addEventListener('click', function () {
+      if (performance.now() < uiLockUntil) return;
+      startGame(true);
+    });
+    btnAgain.addEventListener('click', function () {
+      if (performance.now() < uiLockUntil) return;
+      startGame(true);
+    });
     btnClose.addEventListener('click', function () {
+      if (performance.now() < uiLockUntil) return;
       endOverlay.classList.remove('show');
       resetIdle();
     });
-
-    // Prevent double-tap zoom on iOS for board
-    let lastTouchEnd = 0;
-    document.addEventListener('touchend', function (e) {
-      const now = Date.now();
-      if (now - lastTouchEnd <= 300) e.preventDefault();
-      lastTouchEnd = now;
-    }, { passive: false });
 
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', function () {
