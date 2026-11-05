@@ -1,0 +1,974 @@
+<!DOCTYPE html>
+<html lang="zh-Hant-TW" data-app-version="schulte-v4">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+  <meta name="theme-color" content="#0f766e" />
+  <meta name="description" content="舒爾特方格專注力訓練 App，加入主畫面即可離線練習" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="專注力" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="format-detection" content="telephone=no" />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="apple-touch-icon" href="apple-touch-icon.png" />
+  <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png" />
+  <title>舒爾特專注力訓練</title>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --bg-elev: #1e293b;
+      --bg-card: #1e293b;
+      --text: #f1f5f9;
+      --text-muted: #94a3b8;
+      --accent: #14b8a6;
+      --accent-deep: #0f766e;
+      --accent-soft: rgba(20, 184, 166, 0.18);
+      --danger: #f43f5e;
+      --danger-soft: rgba(244, 63, 94, 0.35);
+      --ok: #22c55e;
+      --cell: #475569;
+      --cell-mid: #334155;
+      --cell-edge: #020617;
+      --cell-done: #0f766e;
+      --cell-done-mid: #0d9488;
+      --cell-done-edge: #042f2e;
+      --btn-sec: #334155;
+      --btn-sec-mid: #1e293b;
+      --btn-sec-edge: #020617;
+      --key-depth: 6px;
+      --key-ms: 70ms;
+      --shadow: 0 8px 28px rgba(0,0,0,.35);
+      --radius: 16px;
+      --safe-t: env(safe-area-inset-top, 0px);
+      --safe-b: env(safe-area-inset-bottom, 0px);
+      --safe-l: env(safe-area-inset-left, 0px);
+      --safe-r: env(safe-area-inset-right, 0px);
+      color-scheme: dark light;
+    }
+    @media (prefers-color-scheme: light) {
+      :root {
+        --bg: #f0fdfa;
+        --bg-elev: #ffffff;
+        --bg-card: #ffffff;
+        --text: #0f172a;
+        --text-muted: #64748b;
+        --cell: #5eead4;
+        --cell-mid: #2dd4bf;
+        --cell-edge: #0f766e;
+        --cell-done: #14b8a6;
+        --cell-done-mid: #0d9488;
+        --cell-done-edge: #0f766e;
+        --btn-sec: #e2e8f0;
+        --btn-sec-mid: #cbd5e1;
+        --btn-sec-edge: #94a3b8;
+        --shadow: 0 8px 24px rgba(15, 118, 110, .12);
+      }
+    }
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    html {
+      margin: 0; padding: 0;
+      background: var(--bg); color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", sans-serif;
+      overscroll-behavior: none;
+      touch-action: manipulation;
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-touch-callout: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+    body {
+      margin: 0 auto;
+      min-height: 100dvh;
+      width: 100%;
+      max-width: 560px;
+      padding: calc(12px + var(--safe-t)) calc(14px + var(--safe-r)) calc(18px + var(--safe-b)) calc(14px + var(--safe-l));
+      display: block;
+      overflow-x: hidden;
+      background: var(--bg);
+      color: var(--text);
+      touch-action: manipulation;
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-touch-callout: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+    h1 {
+      font-size: 1.15rem; font-weight: 700; margin: 0 0 4px;
+      letter-spacing: 0.02em;
+    }
+    .subtitle { color: var(--text-muted); font-size: 0.8rem; margin-bottom: 12px; }
+    .topbar {
+      display: flex; align-items: flex-start; justify-content: space-between; gap: 8px;
+      margin-bottom: 8px;
+      position: relative; z-index: 1;
+    }
+    .stats-row {
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px;
+      margin-bottom: 12px;
+      position: relative; z-index: 1;
+    }
+    .stat {
+      background: var(--bg-card); border-radius: 12px; padding: 10px 8px;
+      text-align: center; box-shadow: var(--shadow);
+    }
+    .stat .label { font-size: 0.7rem; color: var(--text-muted); }
+    .stat .value { font-size: 1.25rem; font-weight: 700; font-variant-numeric: tabular-nums; margin-top: 2px; }
+    .stat .value.accent { color: var(--accent); }
+    .stat .value.danger { color: var(--danger); }
+    .controls {
+      display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; align-items: center;
+      position: relative; z-index: 1;
+    }
+    .seg {
+      display: flex; background: var(--bg-elev); border-radius: 999px; padding: 3px;
+      overflow-x: auto; max-width: 100%;
+      box-shadow: inset 0 0 0 1px rgba(148,163,184,.15);
+    }
+    .seg button {
+      border: 0; background: transparent; color: var(--text-muted);
+      padding: 8px 12px; border-radius: 999px; font-size: 0.85rem; font-weight: 600;
+      min-height: 40px; cursor: pointer; white-space: nowrap;
+    }
+    .seg button.active {
+      background: var(--accent); color: #fff;
+      box-shadow: 0 2px 8px rgba(20,184,166,.4);
+    }
+    .toggles { display: flex; gap: 8px; flex-wrap: wrap; width: 100%; }
+    .toggle {
+      flex: 1; min-width: 120px; min-height: 44px;
+      border: 0; color: var(--text); border-radius: 12px; padding: 8px 12px;
+      font-size: 0.82rem; font-weight: 600; cursor: pointer;
+      display: flex; align-items: center; justify-content: center; gap: 6px;
+      background: linear-gradient(180deg, var(--btn-sec) 0%, var(--btn-sec-mid) 100%);
+      box-shadow: 0 var(--key-depth) 0 var(--btn-sec-edge), 0 10px 14px rgba(0,0,0,.28);
+      transition: transform var(--key-ms) ease, box-shadow var(--key-ms) ease;
+      margin-bottom: var(--key-depth);
+    }
+    .toggle.on {
+      background: linear-gradient(180deg, #2dd4bf 0%, var(--accent-deep) 100%);
+      color: #fff;
+      box-shadow: 0 var(--key-depth) 0 #115e59, 0 10px 14px rgba(15,118,110,.35);
+    }
+    .toggle:active, .toggle.pressed {
+      transform: translateY(var(--key-depth));
+      box-shadow: 0 0 0 var(--btn-sec-edge), 0 2px 6px rgba(0,0,0,.25);
+    }
+    .toggle.on:active, .toggle.on.pressed {
+      box-shadow: 0 0 0 #115e59, 0 2px 6px rgba(15,118,110,.3);
+    }
+    .board-wrap {
+      display: block;
+      width: 100%;
+      margin: 8px 0 8px;
+      padding: 0 0 calc(var(--key-depth) + 12px);
+      position: relative;
+      z-index: 1;
+      flex: none;
+      min-height: unset;
+      overflow: visible;
+    }
+    #board {
+      width: min(92vw, 100%, 520px);
+      max-width: 100%;
+      aspect-ratio: 1 / 1;
+      height: auto;
+      display: grid;
+      gap: 8px;
+      touch-action: none;
+      position: relative;
+      margin: 0 auto;
+      padding-bottom: 2px;
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-touch-callout: none;
+    }
+    #board.size-3 { gap: 10px; }
+    #board.size-6, #board.size-7 { gap: 5px; }
+    .cell {
+      border: 0; border-radius: 12px;
+      background: linear-gradient(180deg, var(--cell) 0%, var(--cell-mid) 100%);
+      color: var(--text);
+      font-weight: 800; font-variant-numeric: tabular-nums;
+      font-size: clamp(0.95rem, 4.8vw, 1.7rem);
+      box-shadow:
+        0 var(--key-depth) 0 var(--cell-edge),
+        0 12px 18px rgba(0,0,0,.42),
+        inset 0 1px 0 rgba(255,255,255,.22);
+      cursor: pointer;
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-touch-callout: none;
+      -webkit-tap-highlight-color: transparent;
+      touch-action: none;
+      transition: transform var(--key-ms) ease, box-shadow var(--key-ms) ease, background var(--key-ms) ease, color .2s;
+      min-height: 40px;
+      opacity: 1;
+      margin: 0;
+      position: relative;
+      pointer-events: auto;
+    }
+    .cell:active:not(.done):not(.disabled),
+    .cell.pressed:not(.done):not(.disabled) {
+      transform: translateY(var(--key-depth));
+      box-shadow:
+        0 0 0 var(--cell-edge),
+        0 2px 6px rgba(0,0,0,.28),
+        inset 0 1px 0 rgba(255,255,255,.08);
+    }
+    .cell.done {
+      background: var(--cell-done);
+      background-image: linear-gradient(180deg, rgba(255,255,255,.12) 0%, rgba(0,0,0,0) 55%), linear-gradient(180deg, var(--cell-done-mid), var(--cell-done));
+      color: #ecfdf5;
+      opacity: 1;
+      pointer-events: none;
+      box-shadow:
+        0 3px 0 var(--cell-done-edge),
+        0 5px 10px rgba(0,0,0,.28),
+        inset 0 1px 0 rgba(255,255,255,.2);
+      transform: none;
+    }
+    .cell.disabled:not(.done) {
+      opacity: 0.92;
+    }
+    .cell.wrong {
+      animation: shake .35s ease, flash .35s ease;
+      background: linear-gradient(180deg, #fb7185 0%, var(--danger) 100%) !important;
+      color: #fff !important;
+      pointer-events: auto !important;
+      box-shadow:
+        0 var(--key-depth) 0 #9f1239,
+        0 10px 16px rgba(244,63,94,.35) !important;
+    }
+    @keyframes shake {
+      0%,100% { transform: translateX(0); }
+      20% { transform: translateX(-6px); }
+      40% { transform: translateX(6px); }
+      60% { transform: translateX(-4px); }
+      80% { transform: translateX(4px); }
+    }
+    @keyframes flash {
+      0%,100% { filter: brightness(1); }
+      50% { filter: brightness(1.25); }
+    }
+    .actions {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 12px;
+      margin-bottom: 14px;
+      position: relative; z-index: 1;
+    }
+    .btn {
+      min-height: 52px; border: 0; border-radius: 14px;
+      font-size: 1rem; font-weight: 800; cursor: pointer;
+      padding: 12px 16px;
+      transition: transform var(--key-ms) ease, box-shadow var(--key-ms) ease, filter var(--key-ms) ease;
+      margin-bottom: var(--key-depth);
+      color: #fff;
+    }
+    .btn-primary {
+      background: linear-gradient(180deg, #2dd4bf 0%, var(--accent-deep) 100%);
+      box-shadow:
+        0 var(--key-depth) 0 #115e59,
+        0 12px 18px rgba(15,118,110,.4),
+        inset 0 1px 0 rgba(255,255,255,.28);
+    }
+    .btn-secondary {
+      background: linear-gradient(180deg, var(--btn-sec) 0%, var(--btn-sec-mid) 100%);
+      color: var(--text);
+      box-shadow:
+        0 var(--key-depth) 0 var(--btn-sec-edge),
+        0 12px 18px rgba(0,0,0,.28),
+        inset 0 1px 0 rgba(255,255,255,.16);
+    }
+    .btn:active:not(:disabled), .btn.pressed:not(:disabled) {
+      transform: translateY(var(--key-depth));
+      box-shadow:
+        0 0 0 transparent,
+        0 2px 6px rgba(0,0,0,.25),
+        inset 0 1px 0 rgba(255,255,255,.1);
+    }
+    .btn:disabled {
+      filter: saturate(.7) brightness(.9);
+      cursor: default;
+    }
+    .panel {
+      background: var(--bg-card); border-radius: var(--radius);
+      padding: 14px; box-shadow: var(--shadow); margin-bottom: 10px;
+      position: relative; z-index: 1;
+    }
+    .panel h2 { font-size: 0.95rem; margin: 0 0 10px; }
+    .streak {
+      display: flex; align-items: center; gap: 8px;
+      font-size: 0.9rem; color: var(--text-muted); margin-bottom: 10px;
+    }
+    .streak strong { color: var(--accent); font-size: 1.1rem; }
+    #chart { width: 100%; height: 100px; display: block; }
+    .history-list {
+      list-style: none; margin: 0; padding: 0;
+      max-height: 160px; overflow-y: auto;
+    }
+    .history-list li {
+      display: flex; justify-content: space-between; gap: 8px;
+      padding: 8px 0; border-bottom: 1px solid rgba(148,163,184,.15);
+      font-size: 0.82rem;
+    }
+    .history-list li:last-child { border-bottom: 0; }
+    .history-list .meta { color: var(--text-muted); }
+    .empty { color: var(--text-muted); font-size: 0.85rem; text-align: center; padding: 12px; }
+    .install-hint {
+      font-size: 0.75rem; color: var(--text-muted); text-align: center;
+      margin-top: 4px; line-height: 1.4;
+      position: relative; z-index: 1;
+    }
+    .overlay {
+      position: fixed; inset: 0; background: rgba(15,23,42,.72);
+      backdrop-filter: blur(6px);
+      display: none; align-items: center; justify-content: center;
+      padding: 24px; z-index: 50;
+    }
+    .overlay.show { display: flex; }
+    .modal {
+      background: var(--bg-card); border-radius: 20px; padding: 24px 20px;
+      width: min(360px, 100%); text-align: center; box-shadow: var(--shadow);
+    }
+    .modal h2 { margin: 0 0 8px; font-size: 1.35rem; }
+    .modal .big { font-size: 2.4rem; font-weight: 800; color: var(--accent); margin: 8px 0; font-variant-numeric: tabular-nums; }
+    .modal p { color: var(--text-muted); margin: 4px 0 16px; }
+    .modal .btn { width: 100%; margin-top: 8px; }
+    .best-badge {
+      display: inline-block; background: var(--accent-soft); color: var(--accent);
+      font-size: 0.75rem; font-weight: 700; padding: 4px 10px; border-radius: 999px;
+      margin-bottom: 8px;
+    }
+    .hidden { display: none !important; }
+    @media (min-width: 700px) {
+      body { max-width: 640px; }
+      #board { width: min(92vw, 100%, 520px); }
+    }
+  </style>
+</head>
+<body>
+  <div class="topbar">
+    <div>
+      <h1>舒爾特專注力訓練</h1>
+      <div class="subtitle">依序點擊數字，訓練視覺搜尋與專注力</div>
+    </div>
+  </div>
+
+  <div class="stats-row">
+    <div class="stat">
+      <div class="label">目標</div>
+      <div class="value accent" id="nextNum">1</div>
+    </div>
+    <div class="stat">
+      <div class="label">時間</div>
+      <div class="value" id="timer">0.00</div>
+    </div>
+    <div class="stat">
+      <div class="label">錯誤</div>
+      <div class="value danger" id="errors">0</div>
+    </div>
+  </div>
+
+  <div class="controls">
+    <div class="seg" id="sizeSeg" role="group" aria-label="方格大小">
+      <button type="button" data-size="3">3×3</button>
+      <button type="button" data-size="4">4×4</button>
+      <button type="button" data-size="5" class="active">5×5</button>
+      <button type="button" data-size="6">6×6</button>
+      <button type="button" data-size="7">7×7</button>
+    </div>
+    <div class="toggles">
+      <button type="button" class="toggle" id="hardToggle" aria-pressed="false">🔀 每點重排</button>
+      <button type="button" class="toggle" id="reverseToggle" aria-pressed="false">⬇️ 倒序</button>
+    </div>
+  </div>
+
+  <div class="board-wrap">
+    <div id="board" class="size-5" role="grid" aria-label="舒爾特方格"></div>
+  </div>
+
+  <div class="actions">
+    <button type="button" class="btn btn-secondary" id="btnRestart">重新開始</button>
+    <button type="button" class="btn btn-primary" id="btnStart">開始</button>
+  </div>
+
+  <div class="panel">
+    <h2>進度紀錄</h2>
+    <div class="streak">🔥 連續練習 <strong id="streak">0</strong> 天 · 今日最佳 <strong id="todayBest">—</strong></div>
+    <canvas id="chart" width="400" height="100" aria-label="最近成績圖表"></canvas>
+    <ul class="history-list" id="historyList"></ul>
+    <div class="empty hidden" id="historyEmpty">尚無紀錄，完成一局後會顯示在這裡</div>
+  </div>
+
+  <p class="install-hint">
+    加入主畫面：iPhone 用 Safari 開本頁 → 分享 →「加入主畫面」；
+    Android 用 Chrome → 選單 →「安裝應用程式」或「加入主畫面」。可離線遊玩。
+  </p>
+
+  <div class="overlay" id="endOverlay" role="dialog" aria-modal="true" aria-labelledby="endTitle">
+    <div class="modal">
+      <div class="best-badge hidden" id="newBest">🎉 新最佳紀錄！</div>
+      <h2 id="endTitle">完成！</h2>
+      <div class="big" id="endTime">0.00s</div>
+      <p id="endDetail">錯誤 0 次</p>
+      <button type="button" class="btn btn-primary" id="btnAgain">再來一局</button>
+      <button type="button" class="btn btn-secondary" id="btnClose">關閉</button>
+    </div>
+  </div>
+
+  <script>
+  (function () {
+    'use strict';
+
+    const STORAGE_KEY = 'schulte-progress-v1';
+    const sizeSeg = document.getElementById('sizeSeg');
+    const boardEl = document.getElementById('board');
+    const nextNumEl = document.getElementById('nextNum');
+    const timerEl = document.getElementById('timer');
+    const errorsEl = document.getElementById('errors');
+    const hardToggle = document.getElementById('hardToggle');
+    const reverseToggle = document.getElementById('reverseToggle');
+    const btnStart = document.getElementById('btnStart');
+    const btnRestart = document.getElementById('btnRestart');
+    const endOverlay = document.getElementById('endOverlay');
+    const endTime = document.getElementById('endTime');
+    const endDetail = document.getElementById('endDetail');
+    const newBest = document.getElementById('newBest');
+    const btnAgain = document.getElementById('btnAgain');
+    const btnClose = document.getElementById('btnClose');
+    const streakEl = document.getElementById('streak');
+    const todayBestEl = document.getElementById('todayBest');
+    const historyList = document.getElementById('historyList');
+    const historyEmpty = document.getElementById('historyEmpty');
+    const chart = document.getElementById('chart');
+
+    let size = 5;
+    let hardMode = false;
+    let reverse = false;
+    let numbers = [];
+    let nextTarget = 1;
+    let maxNum = 25;
+    let started = false;
+    let finished = false;
+    let errors = 0;
+    let startTs = 0;
+    let rafId = 0;
+    let elapsed = 0;
+
+    function loadProgress() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (!raw) return { results: [], best: {}, streak: 0, lastPlayDate: null };
+        return JSON.parse(raw);
+      } catch (e) {
+        return { results: [], best: {}, streak: 0, lastPlayDate: null };
+      }
+    }
+
+    function saveProgress(data) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+    }
+
+    function todayStr() {
+      const d = new Date();
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      return y + '-' + m + '-' + day;
+    }
+
+    function yesterdayStr() {
+      const d = new Date();
+      d.setDate(d.getDate() - 1);
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      return y + '-' + m + '-' + day;
+    }
+
+    function modeKey() {
+      return size + (hardMode ? 'h' : '') + (reverse ? 'r' : '');
+    }
+
+    function shuffle(arr) {
+      const a = arr.slice();
+      for (let i = a.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        const t = a[i]; a[i] = a[j]; a[j] = t;
+      }
+      return a;
+    }
+
+    function buildNumbers() {
+      maxNum = size * size;
+      const arr = [];
+      for (let i = 1; i <= maxNum; i++) arr.push(i);
+      numbers = shuffle(arr);
+      nextTarget = reverse ? maxNum : 1;
+    }
+
+    function formatTime(ms) {
+      return (ms / 1000).toFixed(2);
+    }
+
+    function updateHud() {
+      nextNumEl.textContent = finished ? '✓' : String(nextTarget);
+      errorsEl.textContent = String(errors);
+      timerEl.textContent = formatTime(elapsed);
+    }
+
+    function renderBoard() {
+      boardEl.className = 'size-' + size;
+      boardEl.style.gridTemplateColumns = 'repeat(' + size + ', 1fr)';
+      boardEl.innerHTML = '';
+      const doneSet = new Set();
+      if (reverse) {
+        for (let n = maxNum; n > nextTarget; n--) doneSet.add(n);
+      } else {
+        for (let n = 1; n < nextTarget; n++) doneSet.add(n);
+      }
+      numbers.forEach(function (n) {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'cell';
+        btn.textContent = String(n);
+        btn.dataset.num = String(n);
+        btn.setAttribute('role', 'gridcell');
+        if (doneSet.has(n)) btn.classList.add('done');
+        if (!started || finished) btn.classList.add('disabled');
+        boardEl.appendChild(btn);
+      });
+    }
+
+    function tick() {
+      if (!started || finished) return;
+      elapsed = performance.now() - startTs;
+      timerEl.textContent = formatTime(elapsed);
+      rafId = requestAnimationFrame(tick);
+    }
+
+    function startGame(forceRestart) {
+      cancelAnimationFrame(rafId);
+      finished = false;
+      errors = 0;
+      elapsed = 0;
+      buildNumbers();
+      started = true;
+      startTs = performance.now();
+      endOverlay.classList.remove('show');
+      btnStart.textContent = '進行中…';
+      btnStart.disabled = true;
+      updateHud();
+      renderBoard();
+      rafId = requestAnimationFrame(tick);
+      if (forceRestart) { /* noop keep lint happy */ }
+    }
+
+    function resetIdle() {
+      cancelAnimationFrame(rafId);
+      started = false;
+      finished = false;
+      errors = 0;
+      elapsed = 0;
+      buildNumbers();
+      btnStart.textContent = '開始';
+      btnStart.disabled = false;
+      updateHud();
+      renderBoard();
+    }
+
+    let hardRenderRaf = 0;
+    function queueHardRender() {
+      if (hardRenderRaf) return;
+      hardRenderRaf = requestAnimationFrame(function () {
+        hardRenderRaf = 0;
+        if (started && !finished && hardMode) renderBoard();
+      });
+    }
+
+    function handleCellInput(btn) {
+      if (!started || finished) return;
+      if (!btn || !boardEl.contains(btn)) return;
+      if (btn.classList.contains('done') || btn.classList.contains('disabled')) return;
+      const n = Number(btn.dataset.num);
+      if (!Number.isFinite(n)) return;
+      if (n !== nextTarget) {
+        errors += 1;
+        errorsEl.textContent = String(errors);
+        btn.classList.remove('wrong');
+        void btn.offsetWidth;
+        btn.classList.add('wrong');
+        setTimeout(function () {
+          if (btn.isConnected) btn.classList.remove('wrong');
+        }, 350);
+        if (typeof navigator.vibrate === 'function') navigator.vibrate([40, 40, 60]);
+        return;
+      }
+      if (typeof navigator.vibrate === 'function') navigator.vibrate(10);
+      btn.classList.add('done');
+      const done = reverse ? nextTarget <= 1 : nextTarget >= maxNum;
+      if (done) {
+        finishGame();
+        return;
+      }
+      nextTarget = reverse ? nextTarget - 1 : nextTarget + 1;
+      nextNumEl.textContent = String(nextTarget);
+      if (hardMode) {
+        const remaining = [];
+        numbers.forEach(function (x) {
+          if (reverse) {
+            if (x <= nextTarget) remaining.push(x);
+          } else {
+            if (x >= nextTarget) remaining.push(x);
+          }
+        });
+        const shuffled = shuffle(remaining);
+        let si = 0;
+        numbers = numbers.map(function (x) {
+          if (reverse ? x <= nextTarget : x >= nextTarget) {
+            return shuffled[si++];
+          }
+          return x;
+        });
+        // Defer re-render so other simultaneous pointerdowns on this board still hit.
+        queueHardRender();
+      }
+    }
+
+    function setPressed(btn) {
+      if (!btn || btn.classList.contains('done') || btn.classList.contains('disabled')) return;
+      btn.classList.add('pressed');
+      var cleared = false;
+      function clear() {
+        if (cleared) return;
+        cleared = true;
+        if (btn.isConnected) btn.classList.remove('pressed');
+      }
+      btn.addEventListener('pointerup', clear, { once: true });
+      btn.addEventListener('pointercancel', clear, { once: true });
+      btn.addEventListener('lostpointercapture', clear, { once: true });
+      setTimeout(clear, 120);
+    }
+
+    boardEl.addEventListener('pointerdown', function (ev) {
+      if (ev.pointerType === 'mouse' && ev.button !== 0) return;
+      var btn = ev.target && ev.target.closest ? ev.target.closest('.cell') : null;
+      if (!btn || !boardEl.contains(btn)) return;
+      ev.preventDefault();
+      setPressed(btn);
+      handleCellInput(btn);
+    }, { passive: false });
+
+    let uiLockUntil = 0;
+    function finishGame() {
+      finished = true;
+      started = false;
+      cancelAnimationFrame(rafId);
+      if (hardRenderRaf) { cancelAnimationFrame(hardRenderRaf); hardRenderRaf = 0; }
+      elapsed = performance.now() - startTs;
+      timerEl.textContent = formatTime(elapsed);
+      nextNumEl.textContent = '✓';
+      btnStart.textContent = '開始';
+      btnStart.disabled = false;
+      // Avoid the still-held finger releasing onto 再來一局 / 關閉.
+      uiLockUntil = performance.now() + 320;
+
+      const record = {
+        t: Date.now(),
+        date: todayStr(),
+        size: size,
+        time: elapsed,
+        errors: errors,
+        hard: hardMode,
+        reverse: reverse
+      };
+      const progress = loadProgress();
+      progress.results.unshift(record);
+      if (progress.results.length > 100) progress.results = progress.results.slice(0, 100);
+
+      const key = modeKey();
+      const prevBest = progress.best[key];
+      let isNewBest = false;
+      if (prevBest == null || elapsed < prevBest) {
+        progress.best[key] = elapsed;
+        isNewBest = true;
+      }
+
+      const today = todayStr();
+      if (progress.lastPlayDate !== today) {
+        if (progress.lastPlayDate === yesterdayStr()) {
+          progress.streak = (progress.streak || 0) + 1;
+        } else {
+          progress.streak = 1;
+        }
+        progress.lastPlayDate = today;
+      }
+
+      saveProgress(progress);
+      renderProgress(progress);
+      reportToAndroid(progress, record);
+
+      endTime.textContent = formatTime(elapsed) + 's';
+      endDetail.textContent = '錯誤 ' + errors + ' 次 · ' + size + '×' + size +
+        (hardMode ? ' · 困難' : '') + (reverse ? ' · 倒序' : '');
+      if (isNewBest) newBest.classList.remove('hidden');
+      else newBest.classList.add('hidden');
+      setTimeout(function () {
+        if (finished) endOverlay.classList.add('show');
+      }, 160);
+    }
+
+    function renderProgress(progress) {
+      progress = progress || loadProgress();
+      streakEl.textContent = String(progress.streak || 0);
+
+      const today = todayStr();
+      const todayResults = progress.results.filter(function (r) {
+        return r.date === today && r.size === size && !!r.hard === hardMode && !!r.reverse === reverse;
+      });
+      if (todayResults.length) {
+        const best = Math.min.apply(null, todayResults.map(function (r) { return r.time; }));
+        todayBestEl.textContent = formatTime(best) + 's';
+      } else {
+        const key = modeKey();
+        if (progress.best[key] != null) {
+          todayBestEl.textContent = formatTime(progress.best[key]) + 's';
+        } else {
+          todayBestEl.textContent = '—';
+        }
+      }
+
+      const filtered = progress.results.filter(function (r) {
+        return r.size === size && !!r.hard === hardMode && !!r.reverse === reverse;
+      }).slice(0, 20);
+
+      historyList.innerHTML = '';
+      if (!filtered.length) {
+        historyEmpty.classList.remove('hidden');
+      } else {
+        historyEmpty.classList.add('hidden');
+        filtered.forEach(function (r) {
+          const li = document.createElement('li');
+          const d = new Date(r.t);
+          const timeStr = d.toLocaleString('zh-TW', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+          li.innerHTML = '<span>' + formatTime(r.time) + 's · 錯 ' + r.errors + '</span><span class="meta">' + timeStr + '</span>';
+          historyList.appendChild(li);
+        });
+      }
+
+      drawChart(filtered.slice(0, 10).reverse());
+    }
+
+    function drawChart(points) {
+      const ctx = chart.getContext('2d');
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      const cssW = chart.clientWidth || 400;
+      const cssH = 100;
+      chart.width = Math.floor(cssW * dpr);
+      chart.height = Math.floor(cssH * dpr);
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx.clearRect(0, 0, cssW, cssH);
+
+      const styles = getComputedStyle(document.documentElement);
+      const muted = styles.getPropertyValue('--text-muted').trim() || '#94a3b8';
+      const accent = styles.getPropertyValue('--accent').trim() || '#14b8a6';
+
+      if (!points.length) {
+        ctx.fillStyle = muted;
+        ctx.font = '12px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('完成練習後顯示最近 10 次成績', cssW / 2, cssH / 2);
+        return;
+      }
+
+      const times = points.map(function (p) { return p.time; });
+      const minT = Math.min.apply(null, times);
+      const maxT = Math.max.apply(null, times);
+      const pad = 8;
+      const left = 8;
+      const right = cssW - 8;
+      const top = 12;
+      const bottom = cssH - 18;
+      const span = Math.max(maxT - minT, 1);
+
+      ctx.strokeStyle = muted;
+      ctx.globalAlpha = 0.25;
+      ctx.beginPath();
+      ctx.moveTo(left, bottom);
+      ctx.lineTo(right, bottom);
+      ctx.stroke();
+      ctx.globalAlpha = 1;
+
+      const n = points.length;
+      function xAt(i) {
+        if (n === 1) return (left + right) / 2;
+        return left + (right - left) * (i / (n - 1));
+      }
+      function yAt(t) {
+        return bottom - ((t - minT) / span) * (bottom - top - pad);
+      }
+
+      ctx.beginPath();
+      ctx.strokeStyle = accent;
+      ctx.lineWidth = 2.5;
+      ctx.lineJoin = 'round';
+      points.forEach(function (p, i) {
+        const x = xAt(i);
+        const y = yAt(p.time);
+        if (i === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      });
+      ctx.stroke();
+
+      points.forEach(function (p, i) {
+        const x = xAt(i);
+        const y = yAt(p.time);
+        ctx.beginPath();
+        ctx.fillStyle = accent;
+        ctx.arc(x, y, 3.5, 0, Math.PI * 2);
+        ctx.fill();
+      });
+
+      ctx.fillStyle = muted;
+      ctx.font = '10px sans-serif';
+      ctx.textAlign = 'left';
+      ctx.fillText(formatTime(minT) + 's', left, cssH - 4);
+      ctx.textAlign = 'right';
+      ctx.fillText(formatTime(maxT) + 's', right, cssH - 4);
+    }
+
+
+    function buildAndroidStatsPayload(progress) {
+      progress = progress || loadProgress();
+      var today = todayStr();
+      var todayResults = (progress.results || []).filter(function (r) { return r.date === today; });
+      var bestToday = null;
+      // Prefer default 5x5 normal mode best today; else overall today best.
+      var preferred = todayResults.filter(function (r) {
+        return r.size === 5 && !r.hard && !r.reverse;
+      });
+      var pool = preferred.length ? preferred : todayResults;
+      if (pool.length) {
+        bestToday = Math.min.apply(null, pool.map(function (r) { return r.time; }));
+      }
+      return {
+        streak: progress.streak || 0,
+        lastPlayDate: progress.lastPlayDate || null,
+        gamesToday: todayResults.length,
+        bestTodayMs: bestToday,
+        bestToday: bestToday,
+        today: today
+      };
+    }
+
+    function reportToAndroid(progress, record) {
+      if (!window.AndroidBridge) return;
+      try {
+        var payload = {
+          timeMs: record.time,
+          time: record.time,
+          errors: record.errors,
+          size: record.size,
+          hard: !!record.hard,
+          reverse: !!record.reverse,
+          date: record.date,
+          streak: (progress && progress.streak) || 0,
+          gamesToday: buildAndroidStatsPayload(progress).gamesToday,
+          bestTodayMs: buildAndroidStatsPayload(progress).bestTodayMs
+        };
+        window.AndroidBridge.reportResult(JSON.stringify(payload));
+      } catch (e) {}
+    }
+
+    function pushStatsToAndroid() {
+      if (!window.AndroidBridge) return;
+      try {
+        window.AndroidBridge.reportStats(JSON.stringify(buildAndroidStatsPayload()));
+      } catch (e) {}
+    }
+
+    window.SchulteApp = {
+      startNewGame: function () {
+        try { startGame(true); } catch (e) {}
+      },
+      pushStatsToAndroid: pushStatsToAndroid
+    };
+
+    function bindPress(el) {
+      if (!el || el.dataset.pressBound === '1') return;
+      el.dataset.pressBound = '1';
+      function down(ev) {
+        if (el.disabled || el.classList.contains('done') || el.classList.contains('disabled')) return;
+        if (ev.type === 'mousedown' && ev.button !== 0) return;
+        el.classList.add('pressed');
+      }
+      function up() { el.classList.remove('pressed'); }
+      el.addEventListener('pointerdown', down);
+      el.addEventListener('pointerup', up);
+      el.addEventListener('pointercancel', up);
+      el.addEventListener('pointerleave', up);
+      el.addEventListener('blur', up);
+    }
+
+    [btnStart, btnRestart, btnAgain, btnClose, hardToggle, reverseToggle].forEach(bindPress);
+    sizeSeg.querySelectorAll('button').forEach(bindPress);
+
+        sizeSeg.addEventListener('click', function (e) {
+      const btn = e.target.closest('button[data-size]');
+      if (!btn) return;
+      size = Number(btn.dataset.size);
+      sizeSeg.querySelectorAll('button').forEach(function (b) {
+        b.classList.toggle('active', b === btn);
+      });
+      resetIdle();
+      renderProgress();
+    });
+
+    hardToggle.addEventListener('click', function () {
+      hardMode = !hardMode;
+      hardToggle.classList.toggle('on', hardMode);
+      hardToggle.setAttribute('aria-pressed', hardMode ? 'true' : 'false');
+      resetIdle();
+      renderProgress();
+    });
+
+    reverseToggle.addEventListener('click', function () {
+      reverse = !reverse;
+      reverseToggle.classList.toggle('on', reverse);
+      reverseToggle.setAttribute('aria-pressed', reverse ? 'true' : 'false');
+      resetIdle();
+      renderProgress();
+    });
+
+    btnStart.addEventListener('click', function () {
+      if (performance.now() < uiLockUntil) return;
+      startGame(false);
+    });
+    btnRestart.addEventListener('click', function () {
+      if (performance.now() < uiLockUntil) return;
+      startGame(true);
+    });
+    btnAgain.addEventListener('click', function () {
+      if (performance.now() < uiLockUntil) return;
+      startGame(true);
+    });
+    btnClose.addEventListener('click', function () {
+      if (performance.now() < uiLockUntil) return;
+      endOverlay.classList.remove('show');
+      resetIdle();
+    });
+
+    if ('serviceWorker' in navigator && !window.AndroidBridge) {
+      window.addEventListener('load', function () {
+        navigator.serviceWorker.register('./service-worker.js').catch(function () {});
+      });
+    }
+
+    resetIdle();
+    renderProgress();
+    pushStatsToAndroid();
+    window.addEventListener('resize', function () { renderProgress(); });
+  })();
+  </script>
+</body>
+</html>

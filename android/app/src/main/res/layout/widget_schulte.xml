@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/widget_root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/widget_background"
+    android:orientation="vertical"
+    android:padding="12dp"
+    android:gravity="center_vertical">
+
+    <TextView
+        android:id="@+id/widget_title"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="舒爾特專注力"
+        android:textColor="@color/teal_accent"
+        android:textStyle="bold"
+        android:textSize="13sp"
+        android:maxLines="1"/>
+
+    <TextView
+        android:id="@+id/widget_streak"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="6dp"
+        android:text="🔥 連續 0 天"
+        android:textColor="@color/text_primary"
+        android:textSize="15sp"
+        android:textStyle="bold"
+        android:maxLines="1"/>
+
+    <TextView
+        android:id="@+id/widget_best"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="2dp"
+        android:text="今天還沒練習"
+        android:textColor="@color/text_muted"
+        android:textSize="13sp"
+        android:maxLines="2"/>
+
+    <TextView
+        android:id="@+id/widget_games"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="2dp"
+        android:text="今日已練 0 局"
+        android:textColor="@color/text_muted"
+        android:textSize="12sp"
+        android:maxLines="1"/>
+
+    <Button
+        android:id="@+id/widget_start"
+        android:layout_width="match_parent"
+        android:layout_height="40dp"
+        android:layout_marginTop="10dp"
+        android:background="@drawable/widget_button"
+        android:text="@string/widget_start"
+        android:textColor="@color/white"
+        android:textStyle="bold"
+        android:textSize="14sp"
+        android:padding="0dp"/>
+</LinearLayout>

@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="zh-Hant-TW" data-app-version="schulte-v3">
+<html lang="zh-Hant-TW" data-app-version="schulte-v4">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
@@ -706,6 +706,7 @@
 
       saveProgress(progress);
       renderProgress(progress);
+      reportToAndroid(progress, record);
 
       endTime.textContent = formatTime(elapsed) + 's';
       endDetail.textContent = '錯誤 ' + errors + ' 次 · ' + size + '×' + size +
@@ -836,6 +837,63 @@
       ctx.fillText(formatTime(maxT) + 's', right, cssH - 4);
     }
 
+
+    function buildAndroidStatsPayload(progress) {
+      progress = progress || loadProgress();
+      var today = todayStr();
+      var todayResults = (progress.results || []).filter(function (r) { return r.date === today; });
+      var bestToday = null;
+      // Prefer default 5x5 normal mode best today; else overall today best.
+      var preferred = todayResults.filter(function (r) {
+        return r.size === 5 && !r.hard && !r.reverse;
+      });
+      var pool = preferred.length ? preferred : todayResults;
+      if (pool.length) {
+        bestToday = Math.min.apply(null, pool.map(function (r) { return r.time; }));
+      }
+      return {
+        streak: progress.streak || 0,
+        lastPlayDate: progress.lastPlayDate || null,
+        gamesToday: todayResults.length,
+        bestTodayMs: bestToday,
+        bestToday: bestToday,
+        today: today
+      };
+    }
+
+    function reportToAndroid(progress, record) {
+      if (!window.AndroidBridge) return;
+      try {
+        var payload = {
+          timeMs: record.time,
+          time: record.time,
+          errors: record.errors,
+          size: record.size,
+          hard: !!record.hard,
+          reverse: !!record.reverse,
+          date: record.date,
+          streak: (progress && progress.streak) || 0,
+          gamesToday: buildAndroidStatsPayload(progress).gamesToday,
+          bestTodayMs: buildAndroidStatsPayload(progress).bestTodayMs
+        };
+        window.AndroidBridge.reportResult(JSON.stringify(payload));
+      } catch (e) {}
+    }
+
+    function pushStatsToAndroid() {
+      if (!window.AndroidBridge) return;
+      try {
+        window.AndroidBridge.reportStats(JSON.stringify(buildAndroidStatsPayload()));
+      } catch (e) {}
+    }
+
+    window.SchulteApp = {
+      startNewGame: function () {
+        try { startGame(true); } catch (e) {}
+      },
+      pushStatsToAndroid: pushStatsToAndroid
+    };
+
     function bindPress(el) {
       if (!el || el.dataset.pressBound === '1') return;
       el.dataset.pressBound = '1';
@@ -900,7 +958,7 @@
       resetIdle();
     });
 
-    if ('serviceWorker' in navigator) {
+    if ('serviceWorker' in navigator && !window.AndroidBridge) {
       window.addEventListener('load', function () {
         navigator.serviceWorker.register('./service-worker.js').catch(function () {});
       });
@@ -908,6 +966,7 @@
 
     resetIdle();
     renderProgress();
+    pushStatsToAndroid();
     window.addEventListener('resize', function () { renderProgress(); });
   })();
   </script>

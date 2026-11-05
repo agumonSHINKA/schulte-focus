@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">舒爾特專注力</string>
+    <string name="widget_name">舒爾特專注力小工具</string>
+    <string name="widget_streak">🔥 連續 %1$d 天</string>
+    <string name="widget_best">今日最佳 %1$s 秒</string>
+    <string name="widget_no_practice">今天還沒練習</string>
+    <string name="widget_games_today">今日已練 %1$d 局</string>
+    <string name="widget_start">開始練習</string>
+    <string name="widget_description">顯示連續練習天數與今日最佳成績，一鍵開始舒爾特方格訓練。</string>
+</resources>
