@@ -1,4 +1,4 @@
-const CACHE = 'schulte-v1';
+const CACHE = 'schulte-v2';
 const ASSETS = [
   './',
   './index.html',
@@ -22,8 +22,50 @@ self.addEventListener('activate', (event) => {
   );
 });
 
+function isHTMLRequest(request) {
+  if (request.mode === 'navigate') return true;
+  const accept = request.headers.get('accept') || '';
+  return accept.includes('text/html');
+}
+
 self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET') return;
+  const url = new URL(event.request.url);
+  if (url.origin !== self.location.origin) return;
+
+  // Network-first for HTML / app shell so updates apply quickly
+  if (isHTMLRequest(event.request) || url.pathname.endsWith('/index.html') || url.pathname.endsWith('/')) {
+    event.respondWith(
+      fetch(event.request)
+        .then((res) => {
+          if (res && res.status === 200) {
+            const clone = res.clone();
+            caches.open(CACHE).then((cache) => cache.put(event.request, clone));
+          }
+          return res;
+        })
+        .catch(() => caches.match(event.request).then((c) => c || caches.match('./index.html')))
+    );
+    return;
+  }
+
+  // Network-first for JS/manifest/SW-related, cache fallback
+  if (url.pathname.endsWith('.webmanifest') || url.pathname.endsWith('service-worker.js')) {
+    event.respondWith(
+      fetch(event.request)
+        .then((res) => {
+          if (res && res.status === 200) {
+            const clone = res.clone();
+            caches.open(CACHE).then((cache) => cache.put(event.request, clone));
+          }
+          return res;
+        })
+        .catch(() => caches.match(event.request))
+    );
+    return;
+  }
+
+  // Cache-first for icons/static
   event.respondWith(
     caches.match(event.request).then((cached) => {
       const fetched = fetch(event.request)

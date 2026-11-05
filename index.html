@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="zh-Hant-TW">
+<html lang="zh-Hant-TW" data-app-version="schulte-v2">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
@@ -25,10 +25,19 @@
       --accent-deep: #0f766e;
       --accent-soft: rgba(20, 184, 166, 0.18);
       --danger: #f43f5e;
-      --danger-soft: rgba(244, 63, 94, 0.25);
+      --danger-soft: rgba(244, 63, 94, 0.35);
       --ok: #22c55e;
-      --cell: #334155;
+      --cell: #475569;
+      --cell-mid: #334155;
+      --cell-edge: #020617;
       --cell-done: #0f766e;
+      --cell-done-mid: #0d9488;
+      --cell-done-edge: #042f2e;
+      --btn-sec: #334155;
+      --btn-sec-mid: #1e293b;
+      --btn-sec-edge: #020617;
+      --key-depth: 6px;
+      --key-ms: 70ms;
       --shadow: 0 8px 28px rgba(0,0,0,.35);
       --radius: 16px;
       --safe-t: env(safe-area-inset-top, 0px);
@@ -44,24 +53,36 @@
         --bg-card: #ffffff;
         --text: #0f172a;
         --text-muted: #64748b;
-        --cell: #ccfbf1;
-        --cell-done: #99f6e4;
+        --cell: #5eead4;
+        --cell-mid: #2dd4bf;
+        --cell-edge: #0f766e;
+        --cell-done: #14b8a6;
+        --cell-done-mid: #0d9488;
+        --cell-done-edge: #0f766e;
+        --btn-sec: #e2e8f0;
+        --btn-sec-mid: #cbd5e1;
+        --btn-sec-edge: #94a3b8;
         --shadow: 0 8px 24px rgba(15, 118, 110, .12);
       }
     }
     * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-    html, body {
-      margin: 0; padding: 0; height: 100%;
+    html {
+      margin: 0; padding: 0;
       background: var(--bg); color: var(--text);
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", sans-serif;
       overscroll-behavior: none;
       touch-action: manipulation;
     }
     body {
+      margin: 0 auto;
       min-height: 100dvh;
-      padding: calc(12px + var(--safe-t)) calc(14px + var(--safe-r)) calc(14px + var(--safe-b)) calc(14px + var(--safe-l));
-      display: flex; flex-direction: column;
-      max-width: 480px; margin: 0 auto;
+      width: 100%;
+      max-width: 560px;
+      padding: calc(12px + var(--safe-t)) calc(14px + var(--safe-r)) calc(18px + var(--safe-b)) calc(14px + var(--safe-l));
+      display: block;
+      overflow-x: hidden;
+      background: var(--bg);
+      color: var(--text);
     }
     h1 {
       font-size: 1.15rem; font-weight: 700; margin: 0 0 4px;
@@ -71,10 +92,12 @@
     .topbar {
       display: flex; align-items: flex-start; justify-content: space-between; gap: 8px;
       margin-bottom: 8px;
+      position: relative; z-index: 1;
     }
     .stats-row {
       display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px;
       margin-bottom: 12px;
+      position: relative; z-index: 1;
     }
     .stat {
       background: var(--bg-card); border-radius: 12px; padding: 10px 8px;
@@ -86,6 +109,7 @@
     .stat .value.danger { color: var(--danger); }
     .controls {
       display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; align-items: center;
+      position: relative; z-index: 1;
     }
     .seg {
       display: flex; background: var(--bg-elev); border-radius: 999px; padding: 3px;
@@ -104,47 +128,99 @@
     .toggles { display: flex; gap: 8px; flex-wrap: wrap; width: 100%; }
     .toggle {
       flex: 1; min-width: 120px; min-height: 44px;
-      border: 1px solid rgba(148,163,184,.25); background: var(--bg-elev);
-      color: var(--text); border-radius: 12px; padding: 8px 12px;
+      border: 0; color: var(--text); border-radius: 12px; padding: 8px 12px;
       font-size: 0.82rem; font-weight: 600; cursor: pointer;
       display: flex; align-items: center; justify-content: center; gap: 6px;
+      background: linear-gradient(180deg, var(--btn-sec) 0%, var(--btn-sec-mid) 100%);
+      box-shadow: 0 var(--key-depth) 0 var(--btn-sec-edge), 0 10px 14px rgba(0,0,0,.28);
+      transition: transform var(--key-ms) ease, box-shadow var(--key-ms) ease;
+      margin-bottom: var(--key-depth);
     }
     .toggle.on {
-      border-color: var(--accent); background: var(--accent-soft); color: var(--accent);
+      background: linear-gradient(180deg, #2dd4bf 0%, var(--accent-deep) 100%);
+      color: #fff;
+      box-shadow: 0 var(--key-depth) 0 #115e59, 0 10px 14px rgba(15,118,110,.35);
+    }
+    .toggle:active, .toggle.pressed {
+      transform: translateY(var(--key-depth));
+      box-shadow: 0 0 0 var(--btn-sec-edge), 0 2px 6px rgba(0,0,0,.25);
+    }
+    .toggle.on:active, .toggle.on.pressed {
+      box-shadow: 0 0 0 #115e59, 0 2px 6px rgba(15,118,110,.3);
     }
     .board-wrap {
-      flex: 1; display: flex; align-items: center; justify-content: center;
-      min-height: 0; margin: 4px 0 12px;
+      display: block;
+      width: 100%;
+      margin: 8px 0 8px;
+      padding: 0 0 calc(var(--key-depth) + 12px);
       position: relative;
+      z-index: 1;
+      flex: none;
+      min-height: unset;
+      overflow: visible;
     }
     #board {
-      width: min(100%, calc(100dvh - 340px));
-      aspect-ratio: 1;
-      display: grid; gap: 6px;
+      width: min(92vw, 100%, 520px);
       max-width: 100%;
+      aspect-ratio: 1 / 1;
+      height: auto;
+      display: grid;
+      gap: 8px;
       touch-action: manipulation;
+      position: relative;
+      margin: 0 auto;
+      padding-bottom: 2px;
     }
-    #board.size-3 { gap: 8px; }
-    #board.size-7 { gap: 4px; }
+    #board.size-3 { gap: 10px; }
+    #board.size-6, #board.size-7 { gap: 5px; }
     .cell {
       border: 0; border-radius: 12px;
-      background: var(--cell); color: var(--text);
-      font-weight: 700; font-variant-numeric: tabular-nums;
-      font-size: clamp(1rem, 6vw, 1.75rem);
-      box-shadow: 0 2px 0 rgba(0,0,0,.15);
+      background: linear-gradient(180deg, var(--cell) 0%, var(--cell-mid) 100%);
+      color: var(--text);
+      font-weight: 800; font-variant-numeric: tabular-nums;
+      font-size: clamp(0.95rem, 4.8vw, 1.7rem);
+      box-shadow:
+        0 var(--key-depth) 0 var(--cell-edge),
+        0 12px 18px rgba(0,0,0,.42),
+        inset 0 1px 0 rgba(255,255,255,.22);
       cursor: pointer; user-select: none;
-      transition: transform .08s ease, background .2s ease, opacity .25s ease, color .2s;
-      min-height: 44px;
+      transition: transform var(--key-ms) ease, box-shadow var(--key-ms) ease, background var(--key-ms) ease, color .2s;
+      min-height: 40px;
       -webkit-user-select: none;
+      opacity: 1;
+      margin: 0;
+      position: relative;
     }
-    .cell:active:not(.done):not(.disabled) { transform: scale(0.94); }
+    .cell:active:not(.done):not(.disabled),
+    .cell.pressed:not(.done):not(.disabled) {
+      transform: translateY(var(--key-depth));
+      box-shadow:
+        0 0 0 var(--cell-edge),
+        0 2px 6px rgba(0,0,0,.28),
+        inset 0 1px 0 rgba(255,255,255,.08);
+    }
     .cell.done {
-      background: var(--cell-done); color: rgba(255,255,255,.55);
-      opacity: 0.45; pointer-events: none;
+      background: var(--cell-done);
+      background-image: linear-gradient(180deg, rgba(255,255,255,.12) 0%, rgba(0,0,0,0) 55%), linear-gradient(180deg, var(--cell-done-mid), var(--cell-done));
+      color: #ecfdf5;
+      opacity: 1;
+      pointer-events: none;
+      box-shadow:
+        0 3px 0 var(--cell-done-edge),
+        0 5px 10px rgba(0,0,0,.28),
+        inset 0 1px 0 rgba(255,255,255,.2);
+      transform: none;
+    }
+    .cell.disabled:not(.done) {
+      opacity: 0.92;
     }
     .cell.wrong {
       animation: shake .35s ease, flash .35s ease;
-      background: var(--danger) !important; color: #fff !important;
+      background: linear-gradient(180deg, #fb7185 0%, var(--danger) 100%) !important;
+      color: #fff !important;
+      box-shadow:
+        0 var(--key-depth) 0 #9f1239,
+        0 10px 16px rgba(244,63,94,.35) !important;
     }
     @keyframes shake {
       0%,100% { transform: translateX(0); }
@@ -154,30 +230,52 @@
       80% { transform: translateX(4px); }
     }
     @keyframes flash {
-      0%,100% { box-shadow: none; }
-      50% { box-shadow: 0 0 0 3px var(--danger-soft); }
+      0%,100% { filter: brightness(1); }
+      50% { filter: brightness(1.25); }
     }
     .actions {
-      display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
-      margin-bottom: 10px;
+      display: grid; grid-template-columns: 1fr 1fr; gap: 12px;
+      margin-bottom: 14px;
+      position: relative; z-index: 1;
     }
     .btn {
-      min-height: 48px; border: 0; border-radius: 14px;
-      font-size: 1rem; font-weight: 700; cursor: pointer;
+      min-height: 52px; border: 0; border-radius: 14px;
+      font-size: 1rem; font-weight: 800; cursor: pointer;
       padding: 12px 16px;
+      transition: transform var(--key-ms) ease, box-shadow var(--key-ms) ease, filter var(--key-ms) ease;
+      margin-bottom: var(--key-depth);
+      color: #fff;
     }
     .btn-primary {
-      background: linear-gradient(135deg, var(--accent), var(--accent-deep));
-      color: #fff; box-shadow: 0 6px 18px rgba(15,118,110,.4);
+      background: linear-gradient(180deg, #2dd4bf 0%, var(--accent-deep) 100%);
+      box-shadow:
+        0 var(--key-depth) 0 #115e59,
+        0 12px 18px rgba(15,118,110,.4),
+        inset 0 1px 0 rgba(255,255,255,.28);
     }
     .btn-secondary {
-      background: var(--bg-elev); color: var(--text);
-      box-shadow: inset 0 0 0 1px rgba(148,163,184,.2);
+      background: linear-gradient(180deg, var(--btn-sec) 0%, var(--btn-sec-mid) 100%);
+      color: var(--text);
+      box-shadow:
+        0 var(--key-depth) 0 var(--btn-sec-edge),
+        0 12px 18px rgba(0,0,0,.28),
+        inset 0 1px 0 rgba(255,255,255,.16);
     }
-    .btn:active { transform: scale(0.98); }
+    .btn:active:not(:disabled), .btn.pressed:not(:disabled) {
+      transform: translateY(var(--key-depth));
+      box-shadow:
+        0 0 0 transparent,
+        0 2px 6px rgba(0,0,0,.25),
+        inset 0 1px 0 rgba(255,255,255,.1);
+    }
+    .btn:disabled {
+      filter: saturate(.7) brightness(.9);
+      cursor: default;
+    }
     .panel {
       background: var(--bg-card); border-radius: var(--radius);
       padding: 14px; box-shadow: var(--shadow); margin-bottom: 10px;
+      position: relative; z-index: 1;
     }
     .panel h2 { font-size: 0.95rem; margin: 0 0 10px; }
     .streak {
@@ -201,6 +299,7 @@
     .install-hint {
       font-size: 0.75rem; color: var(--text-muted); text-align: center;
       margin-top: 4px; line-height: 1.4;
+      position: relative; z-index: 1;
     }
     .overlay {
       position: fixed; inset: 0; background: rgba(15,23,42,.72);
@@ -223,6 +322,10 @@
       margin-bottom: 8px;
     }
     .hidden { display: none !important; }
+    @media (min-width: 700px) {
+      body { max-width: 640px; }
+      #board { width: min(92vw, 100%, 520px); }
+    }
   </style>
 </head>
 <body>
@@ -416,6 +519,7 @@
         if (doneSet.has(n)) btn.classList.add('done');
         if (!started || finished) btn.classList.add('disabled');
         btn.addEventListener('click', onCellTap);
+        bindPress(btn);
         boardEl.appendChild(btn);
       });
     }
@@ -468,9 +572,10 @@
         void btn.offsetWidth;
         btn.classList.add('wrong');
         setTimeout(function () { btn.classList.remove('wrong'); }, 350);
-        if (typeof navigator.vibrate === 'function') navigator.vibrate(30);
+        if (typeof navigator.vibrate === 'function') navigator.vibrate([40, 40, 60]);
         return;
       }
+      if (typeof navigator.vibrate === 'function') navigator.vibrate(10);
       btn.classList.add('done');
       const done = reverse ? nextTarget <= 1 : nextTarget >= maxNum;
       if (done) {
@@ -671,7 +776,26 @@
       ctx.fillText(formatTime(maxT) + 's', right, cssH - 4);
     }
 
-    sizeSeg.addEventListener('click', function (e) {
+    function bindPress(el) {
+      if (!el || el.dataset.pressBound === '1') return;
+      el.dataset.pressBound = '1';
+      function down(ev) {
+        if (el.disabled || el.classList.contains('done') || el.classList.contains('disabled')) return;
+        if (ev.type === 'mousedown' && ev.button !== 0) return;
+        el.classList.add('pressed');
+      }
+      function up() { el.classList.remove('pressed'); }
+      el.addEventListener('pointerdown', down);
+      el.addEventListener('pointerup', up);
+      el.addEventListener('pointercancel', up);
+      el.addEventListener('pointerleave', up);
+      el.addEventListener('blur', up);
+    }
+
+    [btnStart, btnRestart, btnAgain, btnClose, hardToggle, reverseToggle].forEach(bindPress);
+    sizeSeg.querySelectorAll('button').forEach(bindPress);
+
+        sizeSeg.addEventListener('click', function (e) {
       const btn = e.target.closest('button[data-size]');
       if (!btn) return;
       size = Number(btn.dataset.size);
