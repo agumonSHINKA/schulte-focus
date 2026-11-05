@@ -1,0 +1,729 @@
+<!DOCTYPE html>
+<html lang="zh-Hant-TW">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+  <meta name="theme-color" content="#0f766e" />
+  <meta name="description" content="舒爾特方格專注力訓練 App，加入主畫面即可離線練習" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="專注力" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="format-detection" content="telephone=no" />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="apple-touch-icon" href="apple-touch-icon.png" />
+  <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png" />
+  <title>舒爾特專注力訓練</title>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --bg-elev: #1e293b;
+      --bg-card: #1e293b;
+      --text: #f1f5f9;
+      --text-muted: #94a3b8;
+      --accent: #14b8a6;
+      --accent-deep: #0f766e;
+      --accent-soft: rgba(20, 184, 166, 0.18);
+      --danger: #f43f5e;
+      --danger-soft: rgba(244, 63, 94, 0.25);
+      --ok: #22c55e;
+      --cell: #334155;
+      --cell-done: #0f766e;
+      --shadow: 0 8px 28px rgba(0,0,0,.35);
+      --radius: 16px;
+      --safe-t: env(safe-area-inset-top, 0px);
+      --safe-b: env(safe-area-inset-bottom, 0px);
+      --safe-l: env(safe-area-inset-left, 0px);
+      --safe-r: env(safe-area-inset-right, 0px);
+      color-scheme: dark light;
+    }
+    @media (prefers-color-scheme: light) {
+      :root {
+        --bg: #f0fdfa;
+        --bg-elev: #ffffff;
+        --bg-card: #ffffff;
+        --text: #0f172a;
+        --text-muted: #64748b;
+        --cell: #ccfbf1;
+        --cell-done: #99f6e4;
+        --shadow: 0 8px 24px rgba(15, 118, 110, .12);
+      }
+    }
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    html, body {
+      margin: 0; padding: 0; height: 100%;
+      background: var(--bg); color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", sans-serif;
+      overscroll-behavior: none;
+      touch-action: manipulation;
+    }
+    body {
+      min-height: 100dvh;
+      padding: calc(12px + var(--safe-t)) calc(14px + var(--safe-r)) calc(14px + var(--safe-b)) calc(14px + var(--safe-l));
+      display: flex; flex-direction: column;
+      max-width: 480px; margin: 0 auto;
+    }
+    h1 {
+      font-size: 1.15rem; font-weight: 700; margin: 0 0 4px;
+      letter-spacing: 0.02em;
+    }
+    .subtitle { color: var(--text-muted); font-size: 0.8rem; margin-bottom: 12px; }
+    .topbar {
+      display: flex; align-items: flex-start; justify-content: space-between; gap: 8px;
+      margin-bottom: 8px;
+    }
+    .stats-row {
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px;
+      margin-bottom: 12px;
+    }
+    .stat {
+      background: var(--bg-card); border-radius: 12px; padding: 10px 8px;
+      text-align: center; box-shadow: var(--shadow);
+    }
+    .stat .label { font-size: 0.7rem; color: var(--text-muted); }
+    .stat .value { font-size: 1.25rem; font-weight: 700; font-variant-numeric: tabular-nums; margin-top: 2px; }
+    .stat .value.accent { color: var(--accent); }
+    .stat .value.danger { color: var(--danger); }
+    .controls {
+      display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; align-items: center;
+    }
+    .seg {
+      display: flex; background: var(--bg-elev); border-radius: 999px; padding: 3px;
+      overflow-x: auto; max-width: 100%;
+      box-shadow: inset 0 0 0 1px rgba(148,163,184,.15);
+    }
+    .seg button {
+      border: 0; background: transparent; color: var(--text-muted);
+      padding: 8px 12px; border-radius: 999px; font-size: 0.85rem; font-weight: 600;
+      min-height: 40px; cursor: pointer; white-space: nowrap;
+    }
+    .seg button.active {
+      background: var(--accent); color: #fff;
+      box-shadow: 0 2px 8px rgba(20,184,166,.4);
+    }
+    .toggles { display: flex; gap: 8px; flex-wrap: wrap; width: 100%; }
+    .toggle {
+      flex: 1; min-width: 120px; min-height: 44px;
+      border: 1px solid rgba(148,163,184,.25); background: var(--bg-elev);
+      color: var(--text); border-radius: 12px; padding: 8px 12px;
+      font-size: 0.82rem; font-weight: 600; cursor: pointer;
+      display: flex; align-items: center; justify-content: center; gap: 6px;
+    }
+    .toggle.on {
+      border-color: var(--accent); background: var(--accent-soft); color: var(--accent);
+    }
+    .board-wrap {
+      flex: 1; display: flex; align-items: center; justify-content: center;
+      min-height: 0; margin: 4px 0 12px;
+      position: relative;
+    }
+    #board {
+      width: min(100%, calc(100dvh - 340px));
+      aspect-ratio: 1;
+      display: grid; gap: 6px;
+      max-width: 100%;
+      touch-action: manipulation;
+    }
+    #board.size-3 { gap: 8px; }
+    #board.size-7 { gap: 4px; }
+    .cell {
+      border: 0; border-radius: 12px;
+      background: var(--cell); color: var(--text);
+      font-weight: 700; font-variant-numeric: tabular-nums;
+      font-size: clamp(1rem, 6vw, 1.75rem);
+      box-shadow: 0 2px 0 rgba(0,0,0,.15);
+      cursor: pointer; user-select: none;
+      transition: transform .08s ease, background .2s ease, opacity .25s ease, color .2s;
+      min-height: 44px;
+      -webkit-user-select: none;
+    }
+    .cell:active:not(.done):not(.disabled) { transform: scale(0.94); }
+    .cell.done {
+      background: var(--cell-done); color: rgba(255,255,255,.55);
+      opacity: 0.45; pointer-events: none;
+    }
+    .cell.wrong {
+      animation: shake .35s ease, flash .35s ease;
+      background: var(--danger) !important; color: #fff !important;
+    }
+    @keyframes shake {
+      0%,100% { transform: translateX(0); }
+      20% { transform: translateX(-6px); }
+      40% { transform: translateX(6px); }
+      60% { transform: translateX(-4px); }
+      80% { transform: translateX(4px); }
+    }
+    @keyframes flash {
+      0%,100% { box-shadow: none; }
+      50% { box-shadow: 0 0 0 3px var(--danger-soft); }
+    }
+    .actions {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
+      margin-bottom: 10px;
+    }
+    .btn {
+      min-height: 48px; border: 0; border-radius: 14px;
+      font-size: 1rem; font-weight: 700; cursor: pointer;
+      padding: 12px 16px;
+    }
+    .btn-primary {
+      background: linear-gradient(135deg, var(--accent), var(--accent-deep));
+      color: #fff; box-shadow: 0 6px 18px rgba(15,118,110,.4);
+    }
+    .btn-secondary {
+      background: var(--bg-elev); color: var(--text);
+      box-shadow: inset 0 0 0 1px rgba(148,163,184,.2);
+    }
+    .btn:active { transform: scale(0.98); }
+    .panel {
+      background: var(--bg-card); border-radius: var(--radius);
+      padding: 14px; box-shadow: var(--shadow); margin-bottom: 10px;
+    }
+    .panel h2 { font-size: 0.95rem; margin: 0 0 10px; }
+    .streak {
+      display: flex; align-items: center; gap: 8px;
+      font-size: 0.9rem; color: var(--text-muted); margin-bottom: 10px;
+    }
+    .streak strong { color: var(--accent); font-size: 1.1rem; }
+    #chart { width: 100%; height: 100px; display: block; }
+    .history-list {
+      list-style: none; margin: 0; padding: 0;
+      max-height: 160px; overflow-y: auto;
+    }
+    .history-list li {
+      display: flex; justify-content: space-between; gap: 8px;
+      padding: 8px 0; border-bottom: 1px solid rgba(148,163,184,.15);
+      font-size: 0.82rem;
+    }
+    .history-list li:last-child { border-bottom: 0; }
+    .history-list .meta { color: var(--text-muted); }
+    .empty { color: var(--text-muted); font-size: 0.85rem; text-align: center; padding: 12px; }
+    .install-hint {
+      font-size: 0.75rem; color: var(--text-muted); text-align: center;
+      margin-top: 4px; line-height: 1.4;
+    }
+    .overlay {
+      position: fixed; inset: 0; background: rgba(15,23,42,.72);
+      backdrop-filter: blur(6px);
+      display: none; align-items: center; justify-content: center;
+      padding: 24px; z-index: 50;
+    }
+    .overlay.show { display: flex; }
+    .modal {
+      background: var(--bg-card); border-radius: 20px; padding: 24px 20px;
+      width: min(360px, 100%); text-align: center; box-shadow: var(--shadow);
+    }
+    .modal h2 { margin: 0 0 8px; font-size: 1.35rem; }
+    .modal .big { font-size: 2.4rem; font-weight: 800; color: var(--accent); margin: 8px 0; font-variant-numeric: tabular-nums; }
+    .modal p { color: var(--text-muted); margin: 4px 0 16px; }
+    .modal .btn { width: 100%; margin-top: 8px; }
+    .best-badge {
+      display: inline-block; background: var(--accent-soft); color: var(--accent);
+      font-size: 0.75rem; font-weight: 700; padding: 4px 10px; border-radius: 999px;
+      margin-bottom: 8px;
+    }
+    .hidden { display: none !important; }
+  </style>
+</head>
+<body>
+  <div class="topbar">
+    <div>
+      <h1>舒爾特專注力訓練</h1>
+      <div class="subtitle">依序點擊數字，訓練視覺搜尋與專注力</div>
+    </div>
+  </div>
+
+  <div class="stats-row">
+    <div class="stat">
+      <div class="label">目標</div>
+      <div class="value accent" id="nextNum">1</div>
+    </div>
+    <div class="stat">
+      <div class="label">時間</div>
+      <div class="value" id="timer">0.00</div>
+    </div>
+    <div class="stat">
+      <div class="label">錯誤</div>
+      <div class="value danger" id="errors">0</div>
+    </div>
+  </div>
+
+  <div class="controls">
+    <div class="seg" id="sizeSeg" role="group" aria-label="方格大小">
+      <button type="button" data-size="3">3×3</button>
+      <button type="button" data-size="4">4×4</button>
+      <button type="button" data-size="5" class="active">5×5</button>
+      <button type="button" data-size="6">6×6</button>
+      <button type="button" data-size="7">7×7</button>
+    </div>
+    <div class="toggles">
+      <button type="button" class="toggle" id="hardToggle" aria-pressed="false">🔀 每點重排</button>
+      <button type="button" class="toggle" id="reverseToggle" aria-pressed="false">⬇️ 倒序</button>
+    </div>
+  </div>
+
+  <div class="board-wrap">
+    <div id="board" class="size-5" role="grid" aria-label="舒爾特方格"></div>
+  </div>
+
+  <div class="actions">
+    <button type="button" class="btn btn-secondary" id="btnRestart">重新開始</button>
+    <button type="button" class="btn btn-primary" id="btnStart">開始</button>
+  </div>
+
+  <div class="panel">
+    <h2>進度紀錄</h2>
+    <div class="streak">🔥 連續練習 <strong id="streak">0</strong> 天 · 今日最佳 <strong id="todayBest">—</strong></div>
+    <canvas id="chart" width="400" height="100" aria-label="最近成績圖表"></canvas>
+    <ul class="history-list" id="historyList"></ul>
+    <div class="empty hidden" id="historyEmpty">尚無紀錄，完成一局後會顯示在這裡</div>
+  </div>
+
+  <p class="install-hint">
+    加入主畫面：iPhone 用 Safari 開本頁 → 分享 →「加入主畫面」；
+    Android 用 Chrome → 選單 →「安裝應用程式」或「加入主畫面」。可離線遊玩。
+  </p>
+
+  <div class="overlay" id="endOverlay" role="dialog" aria-modal="true" aria-labelledby="endTitle">
+    <div class="modal">
+      <div class="best-badge hidden" id="newBest">🎉 新最佳紀錄！</div>
+      <h2 id="endTitle">完成！</h2>
+      <div class="big" id="endTime">0.00s</div>
+      <p id="endDetail">錯誤 0 次</p>
+      <button type="button" class="btn btn-primary" id="btnAgain">再來一局</button>
+      <button type="button" class="btn btn-secondary" id="btnClose">關閉</button>
+    </div>
+  </div>
+
+  <script>
+  (function () {
+    'use strict';
+
+    const STORAGE_KEY = 'schulte-progress-v1';
+    const sizeSeg = document.getElementById('sizeSeg');
+    const boardEl = document.getElementById('board');
+    const nextNumEl = document.getElementById('nextNum');
+    const timerEl = document.getElementById('timer');
+    const errorsEl = document.getElementById('errors');
+    const hardToggle = document.getElementById('hardToggle');
+    const reverseToggle = document.getElementById('reverseToggle');
+    const btnStart = document.getElementById('btnStart');
+    const btnRestart = document.getElementById('btnRestart');
+    const endOverlay = document.getElementById('endOverlay');
+    const endTime = document.getElementById('endTime');
+    const endDetail = document.getElementById('endDetail');
+    const newBest = document.getElementById('newBest');
+    const btnAgain = document.getElementById('btnAgain');
+    const btnClose = document.getElementById('btnClose');
+    const streakEl = document.getElementById('streak');
+    const todayBestEl = document.getElementById('todayBest');
+    const historyList = document.getElementById('historyList');
+    const historyEmpty = document.getElementById('historyEmpty');
+    const chart = document.getElementById('chart');
+
+    let size = 5;
+    let hardMode = false;
+    let reverse = false;
+    let numbers = [];
+    let nextTarget = 1;
+    let maxNum = 25;
+    let started = false;
+    let finished = false;
+    let errors = 0;
+    let startTs = 0;
+    let rafId = 0;
+    let elapsed = 0;
+
+    function loadProgress() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (!raw) return { results: [], best: {}, streak: 0, lastPlayDate: null };
+        return JSON.parse(raw);
+      } catch (e) {
+        return { results: [], best: {}, streak: 0, lastPlayDate: null };
+      }
+    }
+
+    function saveProgress(data) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+    }
+
+    function todayStr() {
+      const d = new Date();
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      return y + '-' + m + '-' + day;
+    }
+
+    function yesterdayStr() {
+      const d = new Date();
+      d.setDate(d.getDate() - 1);
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      return y + '-' + m + '-' + day;
+    }
+
+    function modeKey() {
+      return size + (hardMode ? 'h' : '') + (reverse ? 'r' : '');
+    }
+
+    function shuffle(arr) {
+      const a = arr.slice();
+      for (let i = a.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        const t = a[i]; a[i] = a[j]; a[j] = t;
+      }
+      return a;
+    }
+
+    function buildNumbers() {
+      maxNum = size * size;
+      const arr = [];
+      for (let i = 1; i <= maxNum; i++) arr.push(i);
+      numbers = shuffle(arr);
+      nextTarget = reverse ? maxNum : 1;
+    }
+
+    function formatTime(ms) {
+      return (ms / 1000).toFixed(2);
+    }
+
+    function updateHud() {
+      nextNumEl.textContent = finished ? '✓' : String(nextTarget);
+      errorsEl.textContent = String(errors);
+      timerEl.textContent = formatTime(elapsed);
+    }
+
+    function renderBoard() {
+      boardEl.className = 'size-' + size;
+      boardEl.style.gridTemplateColumns = 'repeat(' + size + ', 1fr)';
+      boardEl.innerHTML = '';
+      const doneSet = new Set();
+      if (reverse) {
+        for (let n = maxNum; n > nextTarget; n--) doneSet.add(n);
+      } else {
+        for (let n = 1; n < nextTarget; n++) doneSet.add(n);
+      }
+      numbers.forEach(function (n) {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'cell';
+        btn.textContent = String(n);
+        btn.dataset.num = String(n);
+        btn.setAttribute('role', 'gridcell');
+        if (doneSet.has(n)) btn.classList.add('done');
+        if (!started || finished) btn.classList.add('disabled');
+        btn.addEventListener('click', onCellTap);
+        boardEl.appendChild(btn);
+      });
+    }
+
+    function tick() {
+      if (!started || finished) return;
+      elapsed = performance.now() - startTs;
+      timerEl.textContent = formatTime(elapsed);
+      rafId = requestAnimationFrame(tick);
+    }
+
+    function startGame(forceRestart) {
+      cancelAnimationFrame(rafId);
+      finished = false;
+      errors = 0;
+      elapsed = 0;
+      buildNumbers();
+      started = true;
+      startTs = performance.now();
+      endOverlay.classList.remove('show');
+      btnStart.textContent = '進行中…';
+      btnStart.disabled = true;
+      updateHud();
+      renderBoard();
+      rafId = requestAnimationFrame(tick);
+      if (forceRestart) { /* noop keep lint happy */ }
+    }
+
+    function resetIdle() {
+      cancelAnimationFrame(rafId);
+      started = false;
+      finished = false;
+      errors = 0;
+      elapsed = 0;
+      buildNumbers();
+      btnStart.textContent = '開始';
+      btnStart.disabled = false;
+      updateHud();
+      renderBoard();
+    }
+
+    function onCellTap(e) {
+      if (!started || finished) return;
+      const btn = e.currentTarget;
+      const n = Number(btn.dataset.num);
+      if (n !== nextTarget) {
+        errors += 1;
+        errorsEl.textContent = String(errors);
+        btn.classList.remove('wrong');
+        void btn.offsetWidth;
+        btn.classList.add('wrong');
+        setTimeout(function () { btn.classList.remove('wrong'); }, 350);
+        if (typeof navigator.vibrate === 'function') navigator.vibrate(30);
+        return;
+      }
+      btn.classList.add('done');
+      const done = reverse ? nextTarget <= 1 : nextTarget >= maxNum;
+      if (done) {
+        finishGame();
+        return;
+      }
+      nextTarget = reverse ? nextTarget - 1 : nextTarget + 1;
+      nextNumEl.textContent = String(nextTarget);
+      if (hardMode) {
+        const remaining = [];
+        numbers.forEach(function (x) {
+          if (reverse) {
+            if (x <= nextTarget) remaining.push(x);
+          } else {
+            if (x >= nextTarget) remaining.push(x);
+          }
+        });
+        const shuffled = shuffle(remaining);
+        let si = 0;
+        numbers = numbers.map(function (x) {
+          if (reverse ? x <= nextTarget : x >= nextTarget) {
+            return shuffled[si++];
+          }
+          return x;
+        });
+        renderBoard();
+      }
+    }
+
+    function finishGame() {
+      finished = true;
+      started = false;
+      cancelAnimationFrame(rafId);
+      elapsed = performance.now() - startTs;
+      timerEl.textContent = formatTime(elapsed);
+      nextNumEl.textContent = '✓';
+      btnStart.textContent = '開始';
+      btnStart.disabled = false;
+
+      const record = {
+        t: Date.now(),
+        date: todayStr(),
+        size: size,
+        time: elapsed,
+        errors: errors,
+        hard: hardMode,
+        reverse: reverse
+      };
+      const progress = loadProgress();
+      progress.results.unshift(record);
+      if (progress.results.length > 100) progress.results = progress.results.slice(0, 100);
+
+      const key = modeKey();
+      const prevBest = progress.best[key];
+      let isNewBest = false;
+      if (prevBest == null || elapsed < prevBest) {
+        progress.best[key] = elapsed;
+        isNewBest = true;
+      }
+
+      const today = todayStr();
+      if (progress.lastPlayDate !== today) {
+        if (progress.lastPlayDate === yesterdayStr()) {
+          progress.streak = (progress.streak || 0) + 1;
+        } else {
+          progress.streak = 1;
+        }
+        progress.lastPlayDate = today;
+      }
+
+      saveProgress(progress);
+      renderProgress(progress);
+
+      endTime.textContent = formatTime(elapsed) + 's';
+      endDetail.textContent = '錯誤 ' + errors + ' 次 · ' + size + '×' + size +
+        (hardMode ? ' · 困難' : '') + (reverse ? ' · 倒序' : '');
+      if (isNewBest) newBest.classList.remove('hidden');
+      else newBest.classList.add('hidden');
+      endOverlay.classList.add('show');
+    }
+
+    function renderProgress(progress) {
+      progress = progress || loadProgress();
+      streakEl.textContent = String(progress.streak || 0);
+
+      const today = todayStr();
+      const todayResults = progress.results.filter(function (r) {
+        return r.date === today && r.size === size && !!r.hard === hardMode && !!r.reverse === reverse;
+      });
+      if (todayResults.length) {
+        const best = Math.min.apply(null, todayResults.map(function (r) { return r.time; }));
+        todayBestEl.textContent = formatTime(best) + 's';
+      } else {
+        const key = modeKey();
+        if (progress.best[key] != null) {
+          todayBestEl.textContent = formatTime(progress.best[key]) + 's';
+        } else {
+          todayBestEl.textContent = '—';
+        }
+      }
+
+      const filtered = progress.results.filter(function (r) {
+        return r.size === size && !!r.hard === hardMode && !!r.reverse === reverse;
+      }).slice(0, 20);
+
+      historyList.innerHTML = '';
+      if (!filtered.length) {
+        historyEmpty.classList.remove('hidden');
+      } else {
+        historyEmpty.classList.add('hidden');
+        filtered.forEach(function (r) {
+          const li = document.createElement('li');
+          const d = new Date(r.t);
+          const timeStr = d.toLocaleString('zh-TW', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+          li.innerHTML = '<span>' + formatTime(r.time) + 's · 錯 ' + r.errors + '</span><span class="meta">' + timeStr + '</span>';
+          historyList.appendChild(li);
+        });
+      }
+
+      drawChart(filtered.slice(0, 10).reverse());
+    }
+
+    function drawChart(points) {
+      const ctx = chart.getContext('2d');
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      const cssW = chart.clientWidth || 400;
+      const cssH = 100;
+      chart.width = Math.floor(cssW * dpr);
+      chart.height = Math.floor(cssH * dpr);
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx.clearRect(0, 0, cssW, cssH);
+
+      const styles = getComputedStyle(document.documentElement);
+      const muted = styles.getPropertyValue('--text-muted').trim() || '#94a3b8';
+      const accent = styles.getPropertyValue('--accent').trim() || '#14b8a6';
+
+      if (!points.length) {
+        ctx.fillStyle = muted;
+        ctx.font = '12px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('完成練習後顯示最近 10 次成績', cssW / 2, cssH / 2);
+        return;
+      }
+
+      const times = points.map(function (p) { return p.time; });
+      const minT = Math.min.apply(null, times);
+      const maxT = Math.max.apply(null, times);
+      const pad = 8;
+      const left = 8;
+      const right = cssW - 8;
+      const top = 12;
+      const bottom = cssH - 18;
+      const span = Math.max(maxT - minT, 1);
+
+      ctx.strokeStyle = muted;
+      ctx.globalAlpha = 0.25;
+      ctx.beginPath();
+      ctx.moveTo(left, bottom);
+      ctx.lineTo(right, bottom);
+      ctx.stroke();
+      ctx.globalAlpha = 1;
+
+      const n = points.length;
+      function xAt(i) {
+        if (n === 1) return (left + right) / 2;
+        return left + (right - left) * (i / (n - 1));
+      }
+      function yAt(t) {
+        return bottom - ((t - minT) / span) * (bottom - top - pad);
+      }
+
+      ctx.beginPath();
+      ctx.strokeStyle = accent;
+      ctx.lineWidth = 2.5;
+      ctx.lineJoin = 'round';
+      points.forEach(function (p, i) {
+        const x = xAt(i);
+        const y = yAt(p.time);
+        if (i === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      });
+      ctx.stroke();
+
+      points.forEach(function (p, i) {
+        const x = xAt(i);
+        const y = yAt(p.time);
+        ctx.beginPath();
+        ctx.fillStyle = accent;
+        ctx.arc(x, y, 3.5, 0, Math.PI * 2);
+        ctx.fill();
+      });
+
+      ctx.fillStyle = muted;
+      ctx.font = '10px sans-serif';
+      ctx.textAlign = 'left';
+      ctx.fillText(formatTime(minT) + 's', left, cssH - 4);
+      ctx.textAlign = 'right';
+      ctx.fillText(formatTime(maxT) + 's', right, cssH - 4);
+    }
+
+    sizeSeg.addEventListener('click', function (e) {
+      const btn = e.target.closest('button[data-size]');
+      if (!btn) return;
+      size = Number(btn.dataset.size);
+      sizeSeg.querySelectorAll('button').forEach(function (b) {
+        b.classList.toggle('active', b === btn);
+      });
+      resetIdle();
+      renderProgress();
+    });
+
+    hardToggle.addEventListener('click', function () {
+      hardMode = !hardMode;
+      hardToggle.classList.toggle('on', hardMode);
+      hardToggle.setAttribute('aria-pressed', hardMode ? 'true' : 'false');
+      resetIdle();
+      renderProgress();
+    });
+
+    reverseToggle.addEventListener('click', function () {
+      reverse = !reverse;
+      reverseToggle.classList.toggle('on', reverse);
+      reverseToggle.setAttribute('aria-pressed', reverse ? 'true' : 'false');
+      resetIdle();
+      renderProgress();
+    });
+
+    btnStart.addEventListener('click', function () { startGame(false); });
+    btnRestart.addEventListener('click', function () { startGame(true); });
+    btnAgain.addEventListener('click', function () { startGame(true); });
+    btnClose.addEventListener('click', function () {
+      endOverlay.classList.remove('show');
+      resetIdle();
+    });
+
+    // Prevent double-tap zoom on iOS for board
+    let lastTouchEnd = 0;
+    document.addEventListener('touchend', function (e) {
+      const now = Date.now();
+      if (now - lastTouchEnd <= 300) e.preventDefault();
+      lastTouchEnd = now;
+    }, { passive: false });
+
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', function () {
+        navigator.serviceWorker.register('./service-worker.js').catch(function () {});
+      });
+    }
+
+    resetIdle();
+    renderProgress();
+    window.addEventListener('resize', function () { renderProgress(); });
+  })();
+  </script>
+</body>
+</html>
